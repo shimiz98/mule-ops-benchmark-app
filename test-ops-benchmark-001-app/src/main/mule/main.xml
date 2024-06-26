@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="8fc7a6de-92e0-430f-a39d-3d3788ac88f5" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="dataweave_setPayload_flow" doc:id="2b84ec80-2391-4c33-b64c-49dca23947ff" >
+		<http:listener doc:name="Listener" doc:id="121ba32a-41b6-4bcf-8a75-ee72ec099f9d" config-ref="HTTP_Listener_config" path="/dw/set-payload/{count}"/>
+		<logger level="INFO" doc:name="flow.begin" doc:id="9cc32e69-ed36-4a96-aaec-7d5fe6ee8313" category="myapp.flow.begin" message="#[output application/json indent=false --- {flowName: flow.name}]"/>
+		<set-variable value="#[now()]" doc:name="myBeginTime" doc:id="30c383f0-638c-4e3c-b609-9c86da432bec" variableName="myBeginTime"/>
+		<set-payload value="#[0]" doc:name="zero" doc:id="8bcda054-0c3b-4f35-89cf-9f3dab511c36" />
+		<set-payload value='#[fun myFunc(count:Number) = reduce((1 to count) as Array&lt;Number&gt;, (item, accm=0) -&gt; accm + item)&#10;output application/json&#10;---&#10;{&#10;	msg: "ok",&#10;	result: myFunc(attributes.uriParams["count"] as Number),&#10;	count: attributes.uriParams["count"] as Number,&#10;	estTime: (now() - vars.myBeginTime) as Number {unit: "milliseconds"},&#10;}]' doc:name="Set Payload" doc:id="d8ea33a6-f213-4b9f-ae60-a8b530204248" />
+		<logger level="INFO" doc:name="flow.end" doc:id="abea3f94-a2aa-409b-9d73-b16ef010b3de" category="myapp.flow.end" message="#[output application/json indent=false --- {flowName: flow.name, payload: payload}]"/>
+	
+</flow>
+	<flow name="forEach_setPayload_flow" doc:id="05a55d00-940e-4253-84f8-1aa386e75d2d" >
+		<http:listener doc:name="Listener" doc:id="597f25f6-37f4-4506-a9a9-980bfa24e174" config-ref="HTTP_Listener_config" path="/for-each/set-payload/{count}"/>
+		<logger level="INFO" doc:name="flow.begin" doc:id="966511b7-1f41-42f4-be67-72fc3da2ccaa" message="#[output application/json indent=false --- {flowName: flow.name}]" category="myapp.flow.begin" />
+		<set-variable value="#[now()]" doc:name="myBeginTime" doc:id="b3e2d76d-e8ec-41a0-ae91-598517c814c2" variableName="myBeginTime"/>
+		<set-payload value="#[0]" doc:name="zero" doc:id="61e5b2f7-bd50-46cb-8d56-a99d74d4a1b7" />
+		<foreach doc:name="For Each" doc:id="667bac66-105e-4000-a2db-b550322774c3" collection='#[1 to attributes.uriParams["count"] as Number]'>
+			<set-payload value="#[payload + 1]" doc:name="add one" doc:id="5cceee53-8626-49c6-ab20-baeb0624c2d8" />
+		</foreach>
+		<set-payload value='#[output application/json&#10;---&#10;{&#10;	msg: "ok",&#10;	result: payload,&#10;	count: attributes.uriParams["count"] as Number,&#10;	estTime: (now() - vars.myBeginTime) as Number {unit: "milliseconds"},&#10;}]' doc:name="Set Payload" doc:id="ef1fd706-6a52-43dd-a2d2-10504b1b3535" />
+		<logger level="INFO" doc:name="flow.end" doc:id="3685959c-22b2-4519-8d74-128183c097c5" message="#[output application/json indent=false --- {flowName: flow.name, payload: payload}]" category="myapp.flow.end" />
+	</flow>
+	<flow name="forEach_setVar_flow" doc:id="44106176-09ac-4a7f-a55b-182e155c7cbd" >
+		<http:listener doc:name="Listener" doc:id="148522ef-3f01-489d-97aa-980c324a72c8" config-ref="HTTP_Listener_config" path="/for-each/set-var/{count}"/>
+		<logger level="INFO" doc:name="flow.begin" doc:id="f3227563-c2e1-4a5d-9cd5-0bf201e92c42" message="#[output application/json indent=false --- {flowName: flow.name}]" category="myapp.flow.begin" />
+		<set-variable value="#[now()]" doc:name="myBeginTime" doc:id="6f6dfd6f-70d9-4f5a-9e64-e0044130d029" variableName="myBeginTime"/>
+		<set-variable value="#[0]" doc:name="zero" doc:id="c786d603-574d-4a64-80fd-c4618ac3abd4" variableName="myResult"/>
+		<foreach doc:name="For Each" doc:id="7aa912fa-3248-4ffd-888e-3c280b4b2f77" collection='#[1 to attributes.uriParams["count"] as Number]' counterVariableName="myCounter">
+			<set-variable value="#[vars.myResult + vars.myCounter]" doc:name="add one" doc:id="31cbeb77-508d-4a69-8334-e53e6720c490" variableName="myResult"/>
+
+		</foreach>
+		<set-payload value='#[output application/json&#10;---&#10;{&#10;	msg: "ok",&#10;	result: vars.myResult,&#10;	count: attributes.uriParams["count"] as Number,&#10;	estTime: (now() - vars.myBeginTime) as Number {unit: "milliseconds"},&#10;}]' doc:name="Set Payload" doc:id="279e665d-30b5-47b9-b3b7-192c4198600d" />
+		<logger level="INFO" doc:name="flow.end" doc:id="bd6de375-e46e-4b88-bde8-903b9ab3a52b" message="#[output application/json indent=false --- {flowName: flow.name, payload: payload}]" category="myapp.flow.end" />
+	
+</flow>
+	<flow name="forEach_transformMsg_flow" doc:id="f6bf24d1-019c-4086-8b47-a4a0643b5488" >
+		<http:listener doc:name="Listener" doc:id="e1db22e3-55c2-4347-8df1-da491211dafe" config-ref="HTTP_Listener_config" path="/for-each/transform-msg/{count}"/>
+		<logger level="INFO" doc:name="flow.begin" doc:id="da75201f-2744-4cd4-8a60-e2dbef7c9ba1" message="#[output application/json indent=false --- {flowName: flow.name}]" category="myapp.flow.begin" />
+		<set-variable value="#[now()]" doc:name="myBeginTime" doc:id="104f291f-a441-4a61-bf31-be8951f62d9b" variableName="myBeginTime"/>
+		<set-payload value="#[0]" doc:name="zero" doc:id="e22f0720-79e4-42d3-a974-c86ec6db7b10" />
+		<foreach doc:name="For Each" doc:id="356f1b6d-5ead-4934-8538-b18d8f5289e2" collection='#[1 to attributes.uriParams["count"] as Number]'>
+			<ee:transform doc:name="add one" doc:id="68c58485-76f5-4560-ba9d-73c066d49eef" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[//%dw 2.0
+//output application/java
+//---
+payload + 1]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</foreach>
+		<set-payload value='#[output application/json&#10;---&#10;{&#10;	msg: "ok",&#10;	result: payload,&#10;	count: attributes.uriParams["count"] as Number,&#10;	estTime: (now() - vars.myBeginTime) as Number {unit: "milliseconds"},&#10;}]' doc:name="Set Payload" doc:id="ce7f7be1-871b-44a5-9417-fc1d86216cd8" />
+		<logger level="INFO" doc:name="flow.end" doc:id="c5b15355-3753-48ea-b1be-4a50a5d8a5bf" message="#[output application/json indent=false --- {flowName: flow.name, payload: payload}]" category="myapp.flow.end" />
+	
+</flow>
+	<flow name="forEach_choice_setVar_flow" doc:id="5d2d88dd-0e02-4417-831a-2799b9a7bd27" >
+		<http:listener doc:name="Listener" doc:id="cf6fdc78-bb0d-4cd3-9fe4-93392ea2b414" config-ref="HTTP_Listener_config" path="/for-each/choice/set-var/{count}" />
+		<logger level="INFO" doc:name="flow.begin" doc:id="6f2d0379-801c-4bb9-b562-0269d703c4ca" message="#[output application/json indent=false --- {flowName: flow.name}]" category="myapp.flow.begin" />
+		<set-variable value="#[now()]" doc:name="myBeginTime" doc:id="ad7542ce-f9f3-4216-8a20-143418af61af" variableName="myBeginTime" />
+		<set-variable value="#[0]" doc:name="zero" doc:id="53b94b25-c705-44db-8641-8e0912451337" variableName="myResult" />
+		<foreach doc:name="For Each" doc:id="3966849f-48c3-43e3-98cc-2de22a21bb57" collection='#[1 to attributes.uriParams["count"] as Number]' counterVariableName="myCounter" >
+			<choice doc:name="Choice" doc:id="2e9df68a-92cc-4687-9ef8-7d56465e599c" >
+				<when expression="#[mod(vars.myCounter, 2) == 0]">
+					<set-variable value="#[vars.myResult + vars.myCounter]" doc:name="add one" doc:id="afccf3d5-4c40-4504-aafa-dcfb3de48c39" variableName="myResult" />
+				</when>
+			</choice>
+		</foreach>
+		<set-payload value='#[output application/json&#10;---&#10;{&#10;	msg: "ok",&#10;	result: vars.myResult,&#10;	count: attributes.uriParams["count"] as Number,&#10;	estTime: (now() - vars.myBeginTime) as Number {unit: "milliseconds"},&#10;}]' doc:name="Set Payload" doc:id="cd4acb85-d2a4-494d-aeb3-c8ced21724fd" />
+		<logger level="INFO" doc:name="flow.end" doc:id="4818cd5c-d766-4b0a-b440-14ffc3cba8a8" message="#[output application/json indent=false --- {flowName: flow.name, payload: payload}]" category="myapp.flow.end" />
+	</flow>
+
+</mule>
